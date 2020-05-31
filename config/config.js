@@ -1,0 +1,1 @@
+module.exports.SEED = '@Este-es@my-token-device-/~NAIN';
