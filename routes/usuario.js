@@ -1,24 +1,21 @@
 var express = require('express');
 var bcrypt = require('bcryptjs');
-var jwt = require('jsonwebtoken');
-
-var mAutentication = require('../middlewares/autentication');
 
 var app = express();
-// var SEED = require('../config/config').SEED;
+// Middeleware
+var mAutentication = require('../middlewares/autentication');
 
 var Usuario = require('../models/usuario');
 
 /**
  * Obtener Todos los Usuarios
  */
-
-app.get('/', (req, res, next) => {
+app.get('/', mAutentication.verificaToken, (req, res) => {
 
     var desde = req.query.desde || 0;
     desde = Number(desde);
 
-    Usuario.find({}, 'nombre email img rol')
+    Usuario.find({}, 'name sur_name email img rol')
         .skip(desde)
         .limit(10)
         .exec(
@@ -32,6 +29,14 @@ app.get('/', (req, res, next) => {
                 }
 
                 Usuario.count({}, (err, conteo) => {
+                    if (err) {
+                        return res.status(500).json({
+                            ok: false,
+                            mensaje: 'Error al contar Usuarios',
+                            errors: err
+                        });
+                    }
+
                     res.status(200).json({
                         ok: true,
                         // usuarios: usuarios
@@ -43,41 +48,49 @@ app.get('/', (req, res, next) => {
 });
 
 /**
- * Middleware - Verificar Token
+ * Registro Publico
  */
+app.post('/create', (req, res) => {
 
-// app.use('/', (req, res, next) => {
+    var body = req.body;
 
-//     var token = req.query.token;
+    var usuario = new Usuario({
+        name: body.name,
+        sur_name: body.sur_name,
+        email: body.email,
+        password: bcrypt.hashSync(body.password, 10)
+    });
 
-//     jwt.verify(token, SEED, (err, decoded) => {
+    usuario.save((err, usuarioGuardado) => {
+        if (err) {
+            return res.status(500).json({
+                ok: false,
+                mensaje: 'Error al crear Usuario',
+                errors: err
+            });
+        }
 
-//         if (err) {
-//             returnres.status(401).json({
-//                 ok: false,
-//                 mensaje: 'Token incorrecto',
-//                 errors: err
-//             });
-//         }
+        usuarioGuardado.password = "";
 
-//         next();
-//     });
-
-// });
+        res.status(201).json({
+            ok: true,
+            usuario: usuarioGuardado
+        });
+    });
+});
 
 /**
- * Crear un usuario
+ * Registro Todos los Usuarios
  */
-
 app.post('/', mAutentication.verificaToken, (req, res) => {
 
     var body = req.body;
 
     var usuario = new Usuario({
-        nombre: body.nombre,
+        name: body.name,
+        sur_name: body.sur_name,
         email: body.email,
         password: bcrypt.hashSync(body.password, 10),
-        img: body.img,
         role: body.role
     });
 
@@ -94,8 +107,7 @@ app.post('/', mAutentication.verificaToken, (req, res) => {
 
         res.status(201).json({
             ok: true,
-            usuario: usuarioGuardado,
-            usuarioToken: req.usuario
+            usuario: usuarioGuardado
         });
     });
 });
@@ -127,7 +139,8 @@ app.put('/:id', mAutentication.verificaToken, (req, res) => {
             });
         }
 
-        usuario.nombre = body.nombre;
+        usuario.name = body.name;
+        usuario.sur_name = body.sur_name;
         usuario.email = body.email;
         usuario.role = body.role;
 
@@ -144,8 +157,7 @@ app.put('/:id', mAutentication.verificaToken, (req, res) => {
 
             res.status(200).json({
                 ok: true,
-                usuario: usuarioGuardado,
-                usuarioToken: req.usuario
+                usuario: usuarioGuardado
             });
         });
 

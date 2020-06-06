@@ -10,9 +10,13 @@ var rolesValidos = {
 
 var usuarioSchema = new Schema({
 
-    nombre: {
+    name: {
         type: String,
         required: [true, 'El nombre es necesario']
+    },
+    sur_name: {
+        type: String,
+        required: false
     },
     email: {
         type: String,
@@ -32,9 +36,13 @@ var usuarioSchema = new Schema({
         default: 'USER_ROLE',
         enum: rolesValidos,
         required: [true, 'El role es necesario']
+    },
+    google: {
+        type: Boolean,
+        default: false
     }
 
-});
+}, { collection: 'usuarios' });
 
 usuarioSchema.plugin(uniqueValidator, { message: 'El {PATH} debe ser único' })
 

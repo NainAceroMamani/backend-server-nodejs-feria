@@ -1,157 +1,160 @@
 var express = require('express');
 
-var mAutentication = require('../middlewares/autentication');
-
 var app = express();
 
-var Medico = require('../models/medico');
-/**
- * Obtener Todos los Médicos
- */
+// Middeleware
+var mAutentication = require('../middlewares/autentication');
 
+// Modelos
+var Pais = require('../models/pais');
+
+/**
+ * Obtener Todos los Paises
+ */
 app.get('/', (req, res, next) => {
 
-    var desde = req.query.desde || 0;
-    desde = Number(desde);
-
-    Medico.find({}, 'nombre img usuario hospital')
-        .skip(desde)
-        .limit(10)
-        .populate('usuario', 'nombre email')
-        .populate('hospital')
+    Pais.find({}, 'name description')
         .exec(
-            (err, medicos) => {
+            (err, paises) => {
                 if (err) {
                     return res.status(400).json({
                         ok: false,
-                        mensaje: 'Error en carga de los hospitales',
+                        mensaje: 'Error en carga de Paises',
                         errors: err
                     });
                 }
 
-                Medico.count({}, (err, conteo) => {
+                Pais.count({}, (err, conteo) => {
+
+                    if (err) {
+                        return res.status(400).json({
+                            ok: false,
+                            mensaje: 'Error en carga de Paises',
+                            errors: err
+                        });
+                    }
+
                     res.status(200).json({
                         ok: true,
-                        medicos,
+                        // usuarios: usuarios
+                        paises,
                         total: conteo
                     });
                 });
             });
+
 });
 
 /**
- * Crear un Médico
+ * Crear un Pais
  */
 
-app.post('/', mAutentication.verificaToken, (req, res) => {
+app.post('/', mAutentication.verificaToken, (req, res, next) => {
 
     var body = req.body;
 
-    var medico = new Medico({
-        nombre: body.nombre,
-        img: body.img,
+    var pais = new Pais({
+        name: body.name,
+        description: body.description,
         usuario: req.usuario._id,
-        hospital: body.hospital
     });
 
-    medico.save((err, medicoGuardado) => {
+    pais.save((err, paisGuardado) => {
         if (err) {
             return res.status(500).json({
                 ok: false,
-                mensaje: 'Error al crear un Hospital',
+                mensaje: 'Error al crear Pais',
                 errors: err
             });
         }
 
         res.status(201).json({
             ok: true,
-            medico: medicoGuardado,
+            pais: paisGuardado,
             usuarioToken: req.usuario
         });
     });
+
 });
 
 /**
- * Actualizar un Médico
+ * Actualizar un Pais
  */
-
 app.put('/:id', mAutentication.verificaToken, (req, res) => {
 
     var id = req.params.id;
     var body = req.body;
 
-    Medico.findById(id, (err, medico) => {
+    Pais.findById(id, (err, pais) => {
 
         if (err) {
             return res.status(500).json({
                 ok: false,
-                mensaje: 'Error al buscar un Médico',
+                mensaje: 'Error al buscar Pais',
                 errors: err
             });
         }
 
-        if (!medico) {
+        if (!pais) {
             return res.status(400).json({
                 ok: false,
-                mensaje: 'El médico con el id ' + id + ' no existe.',
-                errors: { message: 'No existe el médico con ese ID' }
+                mensaje: 'El pais con el id ' + id + ' no existe.',
+                errors: { message: 'No existe un pais con ese ID' }
             });
         }
 
-        medico.nombre = body.nombre;
-        medico.usuario = req.usuario._id;
-        medico.hospital = body.hospital;
+        pais.name = body.name;
+        pais.description = body.description;
+        pais.usuario = req.usuario._id;
 
-        medico.save((err, medicoGuardado) => {
+        pais.save((err, paisGuardado) => {
             if (err) {
                 return res.status(400).json({
                     ok: false,
-                    mensaje: 'Error al actualizar un Médico',
+                    mensaje: 'Error al actualizar el Pais',
                     errors: err
                 });
             }
 
             res.status(200).json({
                 ok: true,
-                medico: medicoGuardado,
+                pais: paisGuardado,
                 usuarioToken: req.usuario
             });
         });
 
     });
 });
-/**
- * Eliminar Médico
- */
 
+/**
+ * Eliminar Pais
+ */
 app.delete('/:id', mAutentication.verificaToken, (req, res) => {
 
     var id = req.params.id;
 
-    Medico.findByIdAndRemove(id, (err, medicoBorrado) => {
+    Pais.findByIdAndRemove(id, (err, paisBorrado) => {
         if (err) {
             return res.status(500).json({
                 ok: false,
-                mensaje: 'Error al borrar un Médico',
+                mensaje: 'Error al borrar Pais',
                 errors: err
             });
         }
 
-        if (!medicoBorrado) {
+        if (!paisBorrado) {
             return res.status(400).json({
                 ok: false,
-                mensaje: 'No existe el médico con ese ID',
-                errors: { message: 'No existe el médico con ese ID' }
+                mensaje: 'No existe un pais con ese ID',
+                errors: { message: 'No existe un pais con ese ID' }
             });
         }
 
         res.status(200).json({
             ok: true,
-            medico: medicoBorrado,
+            pais: paisBorrado,
             usuarioToken: req.usuario
         });
     });
 });
-
-
 module.exports = app;

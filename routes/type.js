@@ -1,154 +1,161 @@
 var express = require('express');
 
-var mAutentication = require('../middlewares/autentication');
-
 var app = express();
 
-var Hospital = require('../models/hospital');
-/**
- * Obtener Todos los Hospitales
- */
+// Middeleware
+var mAutentication = require('../middlewares/autentication');
 
+// Modelos
+var Type = require('../models/type');
+
+/**
+ * Obtener Todos los Tipos de Documentos
+ */
 app.get('/', (req, res, next) => {
 
-    var desde = req.query.desde || 0;
-    desde = Number(desde);
-
-    Hospital.find({}, 'nombre img usuario')
-        .skip(desde)
-        .limit(10)
-        .populate('usuario', 'nombre email')
+    Type.find({}, 'name description')
         .exec(
-            (err, hospitales) => {
+            (err, types) => {
                 if (err) {
                     return res.status(400).json({
                         ok: false,
-                        mensaje: 'Error en carga de los hospitales',
+                        mensaje: 'Error en carga de los Tipos de Documentos',
                         errors: err
                     });
                 }
 
-                Hospital.count({}, (err, conteo) => {
+                Type.count({}, (err, conteo) => {
+
+                    if (err) {
+                        return res.status(400).json({
+                            ok: false,
+                            mensaje: 'Error en carga de los Tipo de Documentos',
+                            errors: err
+                        });
+                    }
+
                     res.status(200).json({
                         ok: true,
-                        hospitales,
+                        // usuarios: usuarios
+                        types,
                         total: conteo
                     });
                 });
             });
+
 });
 
 /**
- * Crear un Hospital
+ * Crear Tipo de Documento
  */
 
-app.post('/', mAutentication.verificaToken, (req, res) => {
+app.post('/', mAutentication.verificaToken, (req, res, next) => {
 
     var body = req.body;
 
-    var hospital = new Hospital({
-        nombre: body.nombre,
-        img: body.img,
+    var type = new Type({
+        name: body.name,
+        description: body.description,
         usuario: req.usuario._id
     });
 
-    hospital.save((err, hospitalGuardado) => {
+    type.save((err, typeGuardado) => {
         if (err) {
             return res.status(500).json({
                 ok: false,
-                mensaje: 'Error al crear un Hospital',
+                mensaje: 'Error en carga del Tipo de Documento',
                 errors: err
             });
         }
 
         res.status(201).json({
             ok: true,
-            hospital: hospitalGuardado,
+            type: typeGuardado,
             usuarioToken: req.usuario
         });
     });
+
 });
 
 /**
- * Actualizar Hospital
+ * Actualizar Tipo de Documento
  */
-
 app.put('/:id', mAutentication.verificaToken, (req, res) => {
 
     var id = req.params.id;
     var body = req.body;
 
-    Hospital.findById(id, (err, hospital) => {
+    Type.findById(id, (err, type) => {
 
         if (err) {
             return res.status(500).json({
                 ok: false,
-                mensaje: 'Error al buscar Hospital',
+                mensaje: 'Error al buscar el Tipo de Documento',
                 errors: err
             });
         }
 
-        if (!hospital) {
+        if (!type) {
             return res.status(400).json({
                 ok: false,
-                mensaje: 'El hospital con el id ' + id + ' no existe.',
-                errors: { message: 'No existe el hospital con ese ID' }
+                mensaje: 'El Tipo de Documento con el id ' + id + ' no existe.',
+                errors: { message: 'No existe un Tipo de Documento con ese ID' }
             });
         }
 
-        hospital.nombre = body.nombre;
-        hospital.usuario = req.usuario._id;
+        type.name = body.name;
+        type.description = body.description;
+        type.usuario = req.usuario._id;
 
-        hospital.save((err, hospitalGuardado) => {
+        type.save((err, typeGuardado) => {
             if (err) {
                 return res.status(400).json({
                     ok: false,
-                    mensaje: 'Error al actualizar Hospital',
+                    mensaje: 'Error al actualizar el Tipo de Documento',
                     errors: err
                 });
             }
 
             res.status(200).json({
                 ok: true,
-                hospital: hospitalGuardado,
+                pais: typeGuardado,
                 usuarioToken: req.usuario
             });
         });
 
     });
 });
-/**
- * Eliminar Hospital
- */
 
+/**
+ * Eliminar Tipo de Documento
+ */
 app.delete('/:id', mAutentication.verificaToken, (req, res) => {
 
     var id = req.params.id;
 
-    Hospital.findByIdAndRemove(id, (err, hospitalBorrado) => {
+    Type.findByIdAndRemove(id, (err, typeBorrado) => {
         if (err) {
             return res.status(500).json({
                 ok: false,
-                mensaje: 'Error al borrar Hospital',
+                mensaje: 'Error al borrar el Tipo de Documento',
                 errors: err
             });
         }
 
-        if (!hospitalBorrado) {
+        if (!typeBorrado) {
             return res.status(400).json({
                 ok: false,
-                mensaje: 'No existe el hospital con ese ID',
-                errors: { message: 'No existe el hospital con ese ID' }
+                mensaje: 'No existe un Tipo de Documento con ese ID',
+                errors: { message: 'No existe un Tipo de Documento con ese ID' }
             });
         }
 
         res.status(200).json({
             ok: true,
-            hospital: hospitalBorrado,
+            type: typeBorrado,
             usuarioToken: req.usuario
         });
     });
 });
-
 
 module.exports = app;

@@ -2,13 +2,13 @@ var mongoose = require('mongoose');
 
 var Schema = mongoose.Schema;
 
-var hospitalSchema = new Schema({
+var typecSchema = new Schema({
 
-    nombre: {
+    name: {
         type: String,
         required: [true, 'El nombre es necesario']
     },
-    img: {
+    description: {
         type: String,
         required: false
     },
@@ -16,6 +16,6 @@ var hospitalSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: 'Usuario'
     },
-}, { collection: 'hospitales' });
+}, { collection: 'types' });
 
-module.exports = mongoose.model('Hospital', hospitalSchema);
+module.exports = mongoose.model('Type', typecSchema);

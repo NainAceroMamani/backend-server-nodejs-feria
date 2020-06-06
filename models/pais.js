@@ -2,11 +2,15 @@ var mongoose = require('mongoose');
 
 var Schema = mongoose.Schema;
 
-var medicoSchema = new Schema({
+var paisSchema = new Schema({
 
-    nombre: {
+    name: {
         type: String,
         required: [true, 'El nombre es necesario']
+    },
+    description: {
+        type: String,
+        required: false
     },
     img: {
         type: String,
@@ -16,11 +20,6 @@ var medicoSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: 'Usuario'
     },
-    hospital: {
-        type: Schema.Types.ObjectId,
-        ref: 'Hospital',
-        required: [true, 'El id hospital es un campo obligatorio']
-    }
-}, { collection: 'medicos' });
+}, { collection: 'paises' });
 
-module.exports = mongoose.model('Medico', medicoSchema);
+module.exports = mongoose.model('Pais', paisSchema);

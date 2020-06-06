@@ -6,19 +6,20 @@ var fs = require('fs');
 var app = express();
 
 var Usuario = require('../models/usuario');
-var Medico = require('../models/medico');
-var Hospital = require('../models/hospital');
+var Pais = require('../models/pais');
+var Ciudad = require('../models/ciudad');
 
 // Middeleware
 app.use(fileUpload());
+var mAutenticationUser = require('../middlewares/autenticationUser');
 
-app.put('/:tipo/:id', (req, res, next) => {
+app.put('/:tipo/:id', mAutenticationUser.verificaToken, (req, res, next) => {
 
     var tipo = req.params.tipo;
     var id = req.params.id;
 
     // tipos de colección válidos
-    var tipoValidos = ['hospitales', 'usuarios', 'medicos'];
+    var tipoValidos = ['usuarios', 'paises', 'ciudades'];
     if (tipoValidos.indexOf(tipo) < 0) { // devolverá -1 si no lo encuentra
         return res.status(400).json({
             ok: false,
@@ -71,12 +72,12 @@ app.put('/:tipo/:id', (req, res, next) => {
         //     ok: true,
         //     mensaje: 'Archivo movido'
         // });
-        subirPorTipo(tipo, id, nombreArchivo, res);
+        subirPorTipo(tipo, id, nombreArchivo, res, req);
 
     });
 });
 
-function subirPorTipo(tipo, id, nombreArchivo, res) {
+function subirPorTipo(tipo, id, nombreArchivo, res, req) {
 
     if (tipo === 'usuarios') {
         Usuario.findById(id, (err, usuario) => {
@@ -87,6 +88,17 @@ function subirPorTipo(tipo, id, nombreArchivo, res) {
                     mensaje: 'Error al subir archivo',
                     errors: err
                 });
+            }
+
+            if (req.usuario.role != 'ADMIN_ROLE') {
+                if (req.usuario._id != usuario.id) {
+
+                    return res.status(403).json({
+                        ok: false,
+                        mensaje: 'No tiene permisos',
+                        errors: err
+                    });
+                }
             }
 
             if (!usuario) {
@@ -110,18 +122,20 @@ function subirPorTipo(tipo, id, nombreArchivo, res) {
             usuario.img = nombreArchivo;
 
             usuario.save((err, usuarioActualizado) => {
+
+                usuarioActualizado.password = "";
                 return res.status(200).json({
                     ok: true,
                     mensaje: 'Imagen de usuario actualizado',
-                    usuario: usuarioActualizado,
-                    pathViejo
+                    usuario: usuarioActualizado
                 });
             });
         });
     }
 
-    if (tipo === 'medicos') {
-        Medico.findById(id, (err, medico) => {
+    if (tipo === 'paises') {
+
+        Pais.findById(id, (err, pais) => {
 
             if (err) {
                 return res.status(500).json({
@@ -131,38 +145,49 @@ function subirPorTipo(tipo, id, nombreArchivo, res) {
                 });
             }
 
-            if (!medico) {
+            if (!pais) {
                 return res.status(400).json({
                     ok: false,
-                    mensaje: 'El médico con el id ' + id + ' no existe.',
-                    errors: { message: 'No existe un médico con ese ID' }
+                    mensaje: 'El pais con el id ' + id + ' no existe.',
+                    errors: { message: 'No existe un pais con ese ID' }
                 });
             }
 
-            var pathViejo = './uploads/medicos/' + medico.img;
+            if (req.usuario.role != 'ADMIN_ROLE') {
+
+                return res.status(403).json({
+                    ok: false,
+                    mensaje: 'No tiene permisos',
+                    errors: err
+                });
+            }
+
+            var pathViejo = './uploads/paises/' + pais.img;
 
             // Verificamos que no venga null
-            if (medico.img) {
+            if (pais.img) {
                 // Si existe, elimina la imagen anterior
                 if (fs.existsSync(pathViejo)) {
                     fs.unlinkSync(pathViejo);
                 }
             }
 
-            medico.img = nombreArchivo;
+            pais.img = nombreArchivo;
+            pais.usuario = req.usuario._id;
 
-            medico.save((err, medicoActualizado) => {
+            pais.save((err, paisActualizado) => {
                 return res.status(200).json({
                     ok: true,
-                    mensaje: 'Imagen del médico actualizado',
-                    medico: medicoActualizado
+                    mensaje: 'Imagen del pais actualizado',
+                    ciudad: paisActualizado
                 });
             });
         });
     }
 
-    if (tipo === 'hospitales') {
-        Hospital.findById(id, (err, hospital) => {
+    if (tipo === 'ciudades') {
+
+        Ciudad.findById(id, (err, ciudad) => {
 
             if (err) {
                 return res.status(500).json({
@@ -172,31 +197,41 @@ function subirPorTipo(tipo, id, nombreArchivo, res) {
                 });
             }
 
-            if (!hospital) {
+            if (!ciudad) {
                 return res.status(400).json({
                     ok: false,
-                    mensaje: 'El hospital con el id ' + id + ' no existe.',
-                    errors: { message: 'No existe un hospital con ese ID' }
+                    mensaje: 'La ciudad con el id ' + id + ' no existe.',
+                    errors: { message: 'No existe una ciudad con ese ID' }
                 });
             }
 
-            var pathViejo = './uploads/hospitales/' + hospital.img;
+            if (req.usuario.role != 'ADMIN_ROLE') {
+
+                return res.status(403).json({
+                    ok: false,
+                    mensaje: 'No tiene permisos',
+                    errors: err
+                });
+            }
+
+            var pathViejo = './uploads/ciudades/' + ciudad.img;
 
             // Verificamos que no venga null
-            if (usuario.img) {
+            if (ciudad.img) {
                 // Si existe, elimina la imagen anterior
                 if (fs.existsSync(pathViejo)) {
                     fs.unlinkSync(pathViejo);
                 }
             }
 
-            hospital.img = nombreArchivo;
+            ciudad.img = nombreArchivo;
+            ciudad.usuario = req.usuario._id;
 
-            hospital.save((err, hospitalActualizado) => {
+            ciudad.save((err, ciudadActualizado) => {
                 return res.status(200).json({
                     ok: true,
-                    mensaje: 'Imagen del hospital actualizado',
-                    hospital: hospitalActualizado
+                    mensaje: 'Imagen de la ciudad actualizado',
+                    ciudad: ciudadActualizado
                 });
             });
         });

@@ -21,15 +21,7 @@ exports.verificaToken = function(req, res, next) {
 
         req.usuario = decoded.usuario;
 
-        if (req.usuario.role == 'ADMIN_ROLE') {
-            next();
-        } else {
-            return res.status(403).json({
-                ok: false,
-                mensaje: 'No tiene permisos',
-                errors: err
-            });
-        }
+        next();
 
     });
 }
